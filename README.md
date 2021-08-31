@@ -30,7 +30,7 @@ repositories {
 dependencies {
 
     // Example: compile "net.darkhax.openloader:OpenLoader-1.16.4:8.0.2"
-    compile "net.darkhax.openloader:OpenLoader-MCVERSION:PUT_BOOKSHELH_VERSION_HERE"
+    compile "net.darkhax.openloader:OpenLoader-MCVERSION:PUT_BOOKSHELF_VERSION_HERE"
 }
 ```
 
