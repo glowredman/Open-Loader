@@ -1,178 +1,178 @@
 buildscript {
     repositories {
+        // These repositories are only for Gradle plugins, put any other repositories in the repository block further below
+        maven { url = 'https://maven.minecraftforge.net' }
         mavenCentral()
     }
     dependencies {
-        classpath group: 'com.diluv.schoomp', name: 'Schoomp', version: '1.1.0'
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
     }
 }
+apply plugin: 'net.minecraftforge.gradle'
+// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
 
-plugins {
-    id 'fabric-loom' version '0.8-SNAPSHOT'
-	id 'com.matthewprenger.cursegradle' version '1.4.0'
-    id 'maven-publish'
-}
+version = "${mod_version}"
+group = "${group}" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "${mod_name}-${minecraft_version}"
 
-apply from: 'https://raw.githubusercontent.com/MinecraftModDevelopment/Gradle-Collection/master/generic/secrets.gradle'
-apply from: 'https://raw.githubusercontent.com/MinecraftModDevelopment/Gradle-Collection/master/generic/markdown-git-changelog.gradle'
-apply from: 'https://raw.githubusercontent.com/MinecraftModDevelopment/Gradle-Collection/master/generic/patreon.gradle'
+// Mojang ships Java 16 to end users in 1.17+ instead of Java 8 in 1.16 or lower, so your mod should target Java 16.
+java.toolchain.languageVersion = JavaLanguageVersion.of(16)
 
-import groovy.json.JsonSlurper
-import groovy.json.JsonOutput
-import com.diluv.schoomp.Webhook
-import com.diluv.schoomp.message.Message
-import com.diluv.schoomp.message.embed.Embed
-import com.diluv.schoomp.message.embed.Footer
+println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
+minecraft {
+    // The mappings can be changed at any time and must be in the following format.
+    // Channel:   Version:
+    // snapshot   YYYYMMDD   Snapshot are built nightly.
+    // stable     #          Stables are built at the discretion of the MCP team.
+    // official   MCVersion  Official field/method names from Mojang mapping files
+    //
+    // You must be aware of the Mojang license when using the 'official' mappings.
+    // See more information here: https://github.com/MinecraftForge/MCPConfig/blob/master/Mojang.md
+    //
+    // Use non-default mappings at your own risk. They may not always work.
+    // Simply re-run your setup task after changing the mappings to update your workspace.
+    mappings channel: 'official', version: '1.17.1'
 
-if (project.hasProperty('secretFile')) {
-    loadSecrets(new File((String) findProperty('secretFile')))
-}
+    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg') // Currently, this location cannot be changed from the default.
 
-sourceCompatibility = JavaVersion.VERSION_16
-targetCompatibility = JavaVersion.VERSION_16
+    // Default run configurations.
+    // These can be tweaked, removed, or duplicated as needed.
+    runs {
+        client {
+            workingDirectory project.file('run')
 
-archivesBaseName = "${project.mod_name}-fabric-${project.minecraft_version}"
-version = project.mod_version + ".${getBuildNumber()}"
+            // Recommended logging data for a userdev environment
+            // The markers can be added/remove as needed separated by commas.
+            // "SCAN": For mods scan.
+            // "REGISTRIES": For firing of registry events.
+            // "REGISTRYDUMP": For getting the contents of all registries.
+            property 'forge.logging.markers', 'REGISTRIES'
 
-repositories {
+            // Recommended logging level for the console
+            // You can set various levels here.
+            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+            property 'forge.logging.console.level', 'debug'
 
-    maven {
-    
-        url "https://www.cursemaven.com"
-        
-        content {
-        
-            includeGroup "curse.maven"
+            mods {
+                openloader {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            // The markers can be added/remove as needed separated by commas.
+            // "SCAN": For mods scan.
+            // "REGISTRIES": For firing of registry events.
+            // "REGISTRYDUMP": For getting the contents of all registries.
+            property 'forge.logging.markers', 'REGISTRIES'
+
+            // Recommended logging level for the console
+            // You can set various levels here.
+            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                openloader {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            // The markers can be added/remove as needed separated by commas.
+            // "SCAN": For mods scan.
+            // "REGISTRIES": For firing of registry events.
+            // "REGISTRYDUMP": For getting the contents of all registries.
+            property 'forge.logging.markers', 'REGISTRIES'
+
+            // Recommended logging level for the console
+            // You can set various levels here.
+            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+            property 'forge.logging.console.level', 'debug'
+
+            // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
+            args '--mod', 'openloader', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+
+            mods {
+                openloader {
+                    source sourceSets.main
+                }
+            }
         }
     }
+}
+
+// Include resources generated by data generators.
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+repositories {
+    // Put repositories for dependencies here
+    // ForgeGradle automatically adds the Forge maven and Maven Central for you
+
+    // If you have mod jar dependencies in ./libs, you can declare them as a repository like so:
+    // flatDir {
+    //     dir 'libs'
+    // }
 }
 
 dependencies {
+    // Specify the version of Minecraft to use. If this is any group other than 'net.minecraft', it is assumed
+    // that the dep is a ForgeGradle 'patcher' dependency, and its patches will be applied.
+    // The userdev artifact is a special name and will get all sorts of transformations applied to it.
+    minecraft 'net.minecraftforge:forge:1.17.1-37.0.51'
 
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // Real mod deobf dependency examples - these get remapped to your current mappings
+    // compileOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}:api") // Adds JEI API as a compile dependency
+    // runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}") // Adds the full JEI mod as a runtime dependency
+    // implementation fg.deobf("com.tterrag.registrate:Registrate:MC${mc_version}-${registrate_version}") // Adds registrate as a dependency
+
+    // Examples using mod jars from ./libs
+    // implementation fg.deobf("blank:coolmod-${mc_version}:${coolmod_version}")
+
+    // For more info...
+    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
+    // http://www.gradle.org/docs/current/userguide/dependency_management.html
 }
 
-loom {
-
-    refmapName = 'openloader.refmap.json'
-}
-
-processResources {
-
-    inputs.property "version", project.version
-
-    filesMatching("fabric.mod.json") {
-    
-        expand "version": project.version
-    }
-}
-
-tasks.withType(JavaCompile) {
-
-    it.options.encoding = 'UTF-8'
-}
-
-
-curseforge {
-
-    apiKey = findProperty('curse_auth') ?: 0 
-    def versions = "${curse_versions}".split(', ')
-
-    project {
-
-        id = "${curse_project}"
-        releaseType = 'beta'
-        changelog = getGitChangelog() + "\n\nLike the mod? Consider following me on [Twitter](https://twitter.com/darkhaxdev) and joining the [Discord](https://discord.darkhax.net)\n\nHuge thanks to my supporters on [Patreon](https://www.patreon.com/Darkhax?MCChangelog?${mod_name})\n\n" + getPledgeLog()
-        changelogType = 'markdown'
-        addGameVersion "Fabric"
-        
-        versions.each {
-
-            addGameVersion "${it}"
-        }
-
-        mainArtifact(file("${project.buildDir}/libs/${archivesBaseName}-${version}.jar"))
-        
-        afterEvaluate {
-            uploadTask.dependsOn(remapJar)
-        }
-    }
-    
-    options {
-        forgeGradleIntegration = false;
-    }
-}
-
-tasks.getByName("curseforge").doLast {
-
-    try {
-    
-        // Reads the file ID given to us by CurseForge
-        def newFileId = tasks.getByName("curseforge${curse_project}").property('mainArtifact').fileID
-    
-        def webhook = new Webhook(findProperty('discordCFWebhook'), "${project.findProperty('mod_name')} Gradle Upload");
-        
-        def message = new Message();        
-        message.setUsername(findProperty('mod_name'));
-        message.setContent("${project.findProperty('mod_name')} ${version} (Fabric) for Minecraft ${findProperty('minecraft_version')} has been released! The download will be public soon.");
-        
-        def embed = new Embed();
-        embed.addField('Download', "${project.findProperty('curse_page')}/files/$newFileId", false);
-        embed.addField('Change Log', "${getGitChangelog() ?: 'Unavailable :('}", false);
-        embed.setColor(0xFF8000);           
-        message.addEmbed(embed);
-
-        webhook.sendMessage(message);
-    }
-    
-    catch (IOException e) {
-        println 'Failed to push to the Discord webhook.'
-    }
-}
-
-java {
-	withSourcesJar()
-}
-
-publishing {
-    publications {
-		mavenJava(MavenPublication) {
-            artifactId project.archivesBaseName
-			artifact(remapJar) {
-				builtBy remapJar
-			}
-			artifact(sourcesJar) {
-				builtBy remapSourcesJar
-			}
-		}
-	}
-    repositories {
-        maven {
-            // Sets the maven URL
-            url findProperty('localMaven')
-        }
-    }
-}
-
-String getBuildNumber() {
-
-    return System.getenv('BUILD_NUMBER') ? System.getenv('BUILD_NUMBER') : System.getenv('TRAVIS_BUILD_NUMBER') ? System.getenv('TRAVIS_BUILD_NUMBER') : '0';
-}
-        
+// Example for how to get properties into the manifest for reading at runtime.
 jar {
     manifest {
         attributes([
-            'Timestamp': System.currentTimeMillis(),
-            'Built-On-Java': "${System.getProperty('java.vm.version')} (${System.getProperty('java.vm.vendor')})",
-            'Built-On-Minecraft': project.findProperty('minecraft_version'),
-            'Built-On-Fabric': project.findProperty('loader_version'),
-            'Built-On-Mapping': "yarn-${project.findProperty('yarn_mappings')}",
-            'Built-On-Gradle': gradle.gradleVersion,
-            'Built-On-Loom': buildscript.configurations.classpath.dependencies.find({ it.name.contains('fabric-loom') }).version,
-            'ModLoader': "fabric-${project.findProperty('loader_version')}",
+                "Specification-Title"     : "${mod_name}",
+                "Specification-Vendor"    : "${mod_vendor}",
+                "Specification-Version"   : "${version}",
+                "Implementation-Title"    : project.archivesBaseName,
+                "Implementation-Version"  : project.version,
+                "Implementation-Vendor"   : "${mod_vendor}",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
+    }
+}
+
+// Example configuration to allow publishing using the maven-publish plugin
+// This is the preferred method to reobfuscate your jar file
+jar.finalizedBy('reobfJar')
+// However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing
+// publish.dependsOn('reobfJar')
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/mcmodsrepo"
+        }
     }
 }
