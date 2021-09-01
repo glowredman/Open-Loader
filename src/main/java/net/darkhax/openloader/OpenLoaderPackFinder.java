@@ -1,4 +1,4 @@
-package net.darkhax.openloader.resource;
+package net.darkhax.openloader;
 
 import java.io.File;
 import java.util.function.Consumer;
@@ -7,27 +7,27 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.resource.DirectoryResourcePack;
-import net.minecraft.resource.ResourcePack;
-import net.minecraft.resource.ResourcePackProfile;
-import net.minecraft.resource.ResourcePackProfile.Factory;
-import net.minecraft.resource.ResourcePackProfile.InsertionPosition;
-import net.minecraft.resource.ResourcePackProvider;
-import net.minecraft.resource.ResourcePackSource;
-import net.minecraft.resource.ZipResourcePack;
+import net.minecraft.server.packs.FilePackResources;
+import net.minecraft.server.packs.FolderPackResources;
+import net.minecraft.server.packs.PackResources;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.Pack.PackConstructor;
+import net.minecraft.server.packs.repository.Pack.Position;
+import net.minecraft.server.packs.repository.PackSource;
+import net.minecraft.server.packs.repository.RepositorySource;
+import net.minecraftforge.fml.loading.FMLPaths;
 
-public class OpenLoaderPackProvider implements ResourcePackProvider {
+public class OpenLoaderPackFinder implements RepositorySource {
     
     private final Type type;
     
-    public OpenLoaderPackProvider(Type type) {
+    public OpenLoaderPackFinder(Type type) {
         
         this.type = type;
     }
     
     @Override
-    public void register (Consumer<ResourcePackProfile> consumer, Factory factory) {
+    public void loadPacks (Consumer<Pack> consumer, PackConstructor factory) {
         
         for (final File candidate : this.type.getDirectory().listFiles()) {
             
@@ -39,8 +39,8 @@ public class OpenLoaderPackProvider implements ResourcePackProvider {
                 final String packName = this.type.path + "/" + candidate.getName();
                 this.type.getLogger().info("Loading pack {} from {}.", packName, candidate.getAbsolutePath());
                 
-                final Supplier<ResourcePack> packSupplier = candidate.isDirectory() ? () -> new DirectoryResourcePack(candidate) : () -> new ZipResourcePack(candidate);
-                final ResourcePackProfile profile = ResourcePackProfile.of(packName, true, packSupplier, factory, InsertionPosition.TOP, ResourcePackSource.PACK_SOURCE_NONE);
+                final Supplier<PackResources> packSupplier = candidate.isDirectory() ? () -> new FolderPackResources(candidate) : () -> new FilePackResources(candidate);
+                final Pack profile = Pack.create(packName, true, packSupplier, factory, Position.TOP, PackSource.DEFAULT);
                 
                 if (profile != null) {
                     
@@ -84,12 +84,9 @@ public class OpenLoaderPackProvider implements ResourcePackProvider {
         
         public File getDirectory () {
             
-            final File directory = FabricLoader.getInstance().getConfigDir().resolve(this.path).toFile();
-            
-            if (!directory.exists()) {
-                
-                directory.mkdirs();
-            }
+            final File directory = new File(FMLPaths.GAMEDIR.get().toString() + "/" + this.path);
+
+            directory.mkdirs();
             
             return directory;
         }

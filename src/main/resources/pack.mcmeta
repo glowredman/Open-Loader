@@ -1,1 +1,6 @@
-{"pack":{"pack_format":6,"description":"Runelic"}}
+{
+    "pack": {
+        "description": "openloader resources",
+        "pack_format": 7
+    }
+}

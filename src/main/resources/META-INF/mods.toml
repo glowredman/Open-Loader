@@ -1,0 +1,16 @@
+modLoader="javafml"
+loaderVersion="[37,)"
+issueTrackerURL="https://github.com/Darkhax-Minecraft/Open-Loader/issues"
+license = "LGPL 2.1"
+
+[[mods]]
+modId="openloader"
+updateJSONURL="https://updates.blamejared.com/get?n=openloader&gv=1.17.1"
+version="3.0.1"
+displayName="OpenLoader"
+displayURL="https://www.curseforge.com/minecraft/mc-mods/open-loader"
+credits="${mod_credits}"
+authors="Darkhax"
+description='''
+An open source data and resource loader.
+'''
