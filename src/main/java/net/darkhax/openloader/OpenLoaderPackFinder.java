@@ -4,9 +4,6 @@ import java.io.File;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import net.minecraft.server.packs.FilePackResources;
 import net.minecraft.server.packs.FolderPackResources;
 import net.minecraft.server.packs.PackResources;
@@ -37,7 +34,7 @@ public class OpenLoaderPackFinder implements RepositorySource {
             if (isFilePack || isFolderPack) {
                 
                 final String packName = this.type.path + "/" + candidate.getName();
-                this.type.getLogger().info("Loading pack {} from {}.", packName, candidate.getAbsolutePath());
+                OpenLoader.LOGGER.info("Loading pack {} from {}.", packName, candidate.getAbsolutePath());
                 
                 final Supplier<PackResources> packSupplier = candidate.isDirectory() ? () -> new FolderPackResources(candidate) : () -> new FilePackResources(candidate);
                 final Pack profile = Pack.create(packName, true, packSupplier, factory, Position.TOP, PackSource.DEFAULT);
@@ -45,46 +42,36 @@ public class OpenLoaderPackFinder implements RepositorySource {
                 if (profile != null) {
                     
                     consumer.accept(profile);
-                    this.type.getLogger().info("Loaded pack {}.", packName);
+                    OpenLoader.LOGGER.info("Loaded pack {}.", packName);
                 }
                 
                 else {
                     
-                    this.type.getLogger().error("Failed to build pack profile {} from {}.", packName, candidate.getAbsolutePath());
+                	OpenLoader.LOGGER.error("Failed to build pack profile {} from {}.", packName, candidate.getAbsolutePath());
                 }
             }
             
             else {
                 
-                this.type.getLogger().error("Skipping over {}. It is not a valid folder or archive/file pack.", candidate.getAbsolutePath());
+            	OpenLoader.LOGGER.error("Skipping over {}. It is not a valid folder or archive/file pack.", candidate.getAbsolutePath());
             }
         }
     }
     
     public static enum Type {
         
-        DATA("Data Pack", "openloader/data"),
-        RESOURCES("Resource Pack", "openloader/resources");
+        DATA("openloader/data"),
+        RESOURCES("openloader/resources");
         
-        final String displayName;
         final String path;
-        final Logger logger;
         
-        Type(String name, String path) {
-            
-            this.displayName = name;
+        Type(String path) {
             this.path = path;
-            this.logger = LogManager.getLogger("Open Loader");
-        }
-        
-        public Logger getLogger () {
-            
-            return this.logger;
         }
         
         public File getDirectory () {
             
-            final File directory = new File(FMLPaths.GAMEDIR.get().toString() + "/" + this.path);
+            final File directory = FMLPaths.GAMEDIR.get().resolve(this.path).toFile();
 
             directory.mkdirs();
             
